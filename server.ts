@@ -1,6 +1,7 @@
 import express from "express";
 import path from "path";
 import fs from "fs";
+import os from "os";
 import { createServer as createViteServer } from "vite";
 import multer from "multer";
 
@@ -8,7 +9,7 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  const uploadsDir = path.join(process.cwd(), 'uploads');
+  const uploadsDir = path.join(os.tmpdir(), 'uploads');
   if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
   }
@@ -27,7 +28,7 @@ async function startServer() {
   });
   const upload = multer({ storage });
 
-  const dbPath = path.join(process.cwd(), 'uploads', 'db.json');
+  const dbPath = path.join(os.tmpdir(), 'db.json');
   
   function getGalleries() {
     if (fs.existsSync(dbPath)) {
