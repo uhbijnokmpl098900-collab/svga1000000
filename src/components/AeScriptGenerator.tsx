@@ -116,8 +116,30 @@ export const AeScriptGenerator: React.FC<{ onCancel: () => void }> = ({ onCancel
       </button>
       
       {generatedScript && (
-        <div className="mt-8">
-          <h3 className="text-lg font-bold text-white mb-3">الكود الناتج (انسخه إلى AE):</h3>
+        <div className="mt-8 relative">
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="text-lg font-bold text-white">الكود الناتج (انسخه إلى AE):</h3>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(generatedScript);
+                const btn = document.getElementById('copy-script-btn');
+                if (btn) {
+                  const originalText = btn.innerText;
+                  btn.innerText = 'تم النسخ!';
+                  btn.classList.add('text-green-400');
+                  setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.classList.remove('text-green-400');
+                  }, 2000);
+                }
+              }}
+              id="copy-script-btn"
+              className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-2"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+              نسخ الكود
+            </button>
+          </div>
           <pre className="bg-black text-green-400 p-6 rounded-xl overflow-x-auto text-sm font-mono border border-slate-700">
             {generatedScript}
           </pre>

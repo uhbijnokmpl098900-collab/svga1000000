@@ -1,5 +1,8 @@
 {
-  "name": "SVGA Genius Processor Procgcvh88",
-  "description": "Professional-grade animation processor. Edit, replace, and export SVGA assets with quantum precision. Support for high-quality PNG sequences and full SVGA reconstruction.",
-  "requestFramePermissions": []
+  "name": "ImageLink Pro",
+  "description": "Upload, arrange, and share a beautifully formatted collection of images in a single scrollable link.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

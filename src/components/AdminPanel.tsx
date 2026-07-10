@@ -23,6 +23,7 @@ const EXPORT_FORMATS = ['AE Project', 'SVGA 2.0 EX', 'SVGA 2.0', 'Image Sequence
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onCancel }) => {
   const [activeTab, setActiveTab] = useState<'users' | 'store' | 'keys' | 'assets' | 'settings' | 'records'>('users');
+  const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
   const [dropdownState, setDropdownState] = useState<{ userId: string; x: number; y: number; position: 'top' | 'bottom' } | null>(null);
   const [subDropdownState, setSubDropdownState] = useState<{ userId: string; x: number; y: number; position: 'top' | 'bottom' } | null>(null);
   const [loading, setLoading] = useState(false);
@@ -457,8 +458,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onCancel })
         createdAt: Timestamp.now(),
         createdBy: currentUser?.id || 'admin'
       };
-      await addDoc(collection(db, 'licenseKeys'), newKey);
-      fetchData();
+      const docRef = await addDoc(collection(db, 'licenseKeys'), newKey);
+      
+      const addedKey = { id: docRef.id, ...newKey } as LicenseKey;
+      setKeys(prev => [addedKey, ...prev]);
+      
+      // Invalidate cache for keys
+      setCache(prev => {
+        const newCache = { ...prev };
+        delete newCache.keys;
+        return newCache;
+      });
+      
+      // Automatically copy the generated key
+      navigator.clipboard.writeText(key);
+      setCopiedKeyId(docRef.id);
+      setTimeout(() => setCopiedKeyId(null), 2000);
+      
     } catch (error) {
       console.error("Error generating key:", error);
     }
@@ -942,7 +958,30 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onCancel })
                     {keys.map(key => (
                       <div key={key.id} className="bg-slate-950/50 border border-white/10 rounded-lg p-4 flex justify-between items-center group">
                         <div>
-                          <p className="font-mono text-lg tracking-wider text-indigo-300">{key.key}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-mono text-lg tracking-wider text-indigo-300">{key.key}</p>
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(key.key);
+                                setCopiedKeyId(key.id);
+                                setTimeout(() => setCopiedKeyId(null), 2000);
+                              }}
+                              className="p-1 text-slate-500 hover:text-indigo-400 transition-colors flex items-center gap-1"
+                              title="نسخ الكود"
+                            >
+                              {copiedKeyId === key.id ? (
+                                <>
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400"><polyline points="20 6 9 17 4 12"/></svg>
+                                  <span className="text-xs text-green-400">تم النسخ</span>
+                                </>
+                              ) : (
+                                <>
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                                  <span className="text-xs">نسخ</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
                           <div className="flex gap-2 text-xs text-slate-500 mt-1">
                             <span>{key.duration}</span>
                             <span>•</span>
