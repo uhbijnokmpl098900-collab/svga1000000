@@ -27,7 +27,24 @@ async function startServer() {
   });
   const upload = multer({ storage });
 
-  const galleries = new Map<string, any>();
+  const dbPath = path.join(process.cwd(), 'uploads', 'db.json');
+  
+  function getGalleries() {
+    if (fs.existsSync(dbPath)) {
+      try {
+        return JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+      } catch (e) {
+        return {};
+      }
+    }
+    return {};
+  }
+  
+  function saveGallery(id: string, data: any) {
+    const db = getGalleries();
+    db[id] = data;
+    fs.writeFileSync(dbPath, JSON.stringify(db));
+  }
 
   app.post('/api/upload', upload.array('images', 100), (req: express.Request, res: express.Response): void => {
     const files = req.files as Express.Multer.File[];
@@ -45,12 +62,13 @@ async function startServer() {
   app.post('/api/galleries', (req: express.Request, res: express.Response): void => {
     const { images, layout } = req.body;
     const id = Math.random().toString(36).substring(2, 8);
-    galleries.set(id, { images, layout });
+    saveGallery(id, { images, layout });
     res.json({ id });
   });
 
   app.get('/api/galleries/:id', (req: express.Request, res: express.Response): void => {
-    const gallery = galleries.get(req.params.id);
+    const db = getGalleries();
+    const gallery = db[req.params.id];
     if (gallery) {
       res.json(gallery);
     } else {
