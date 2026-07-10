@@ -17,12 +17,37 @@ export default function App() {
   const [viewMode, setViewMode] = useState<'edit' | 'published'>('edit');
   const [publishedId, setPublishedId] = useState<string>('');
   const [copied, setCopied] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Initial theme check
+  // Initial theme check and URL params
   useEffect(() => {
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
       setTheme('dark');
     }
+
+    const checkUrl = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('id');
+      if (id) {
+        try {
+          const res = await fetch(`/api/galleries/${id}`);
+          if (res.ok) {
+            const data = await res.json();
+            setImages(data.images);
+            setLayout(data.layout);
+            setPublishedId(id);
+            setViewMode('published');
+          } else {
+            console.error('Gallery not found');
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      setIsLoading(false);
+    };
+    
+    checkUrl();
   }, []);
 
   useEffect(() => {
@@ -33,19 +58,51 @@ export default function App() {
     }
   }, [theme]);
 
-  const handlePublish = () => {
-    const fakeId = Math.random().toString(36).substring(2, 8);
-    setPublishedId(fakeId);
-    setViewMode('published');
+  const handlePublish = async () => {
+    try {
+      const res = await fetch('/api/galleries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ images, layout })
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        setPublishedId(data.id);
+        setViewMode('published');
+        // Update URL without reloading
+        const url = new URL(window.location.href);
+        url.searchParams.set('id', data.id);
+        window.history.pushState({}, '', url.toString());
+      }
+    } catch (e) {
+      console.error('Failed to publish', e);
+      alert('Failed to create link');
+    }
   };
 
-  const fakeUrl = `imglnk.to/${publishedId}`;
+  const actualUrl = typeof window !== 'undefined' ? window.location.href : '';
 
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(`https://${fakeUrl}`);
+    navigator.clipboard.writeText(actualUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  const handleBackToEditor = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('id');
+    window.history.pushState({}, '', url.toString());
+    setViewMode('edit');
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-zinc-950 flex items-center justify-center text-zinc-500">
+        Loading...
+      </div>
+    );
+  }
 
   if (viewMode === 'published') {
     return (
@@ -54,15 +111,15 @@ export default function App() {
         <div className="fixed top-0 inset-x-0 h-14 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 z-40 flex items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-4">
             <button 
-              onClick={() => setViewMode('edit')}
+              onClick={handleBackToEditor}
               className="p-2 -ml-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-zinc-600 dark:text-zinc-400"
               title="Back to Editor"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-100 dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-800">
-              <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                {fakeUrl}
+              <span className="text-sm font-medium text-blue-600 dark:text-blue-400 truncate max-w-[200px] sm:max-w-md">
+                {actualUrl.replace(/^https?:\/\//, '')}
               </span>
               <button 
                 onClick={copyToClipboard}
@@ -81,7 +138,7 @@ export default function App() {
             >
               {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
-            <button className="flex items-center gap-2 text-sm font-medium px-3 py-1.5 bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 rounded-md hover:opacity-90">
+            <button className="flex items-center gap-2 text-sm font-medium px-3 py-1.5 bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 rounded-md hover:opacity-90" onClick={() => window.open(actualUrl, '_blank')}>
                Open <ExternalLink className="w-4 h-4" />
             </button>
           </div>

@@ -3,7 +3,6 @@ export type LayoutType = 'grid' | 'full-width' | 'row-height' | 'original';
 export interface ImageItem {
   id: string;
   url: string;
-  file?: File;
   caption?: string;
 }
 

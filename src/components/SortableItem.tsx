@@ -54,7 +54,7 @@ export function SortableItem({ image, onRemove }: SortableItemProps) {
       <div className="flex-1 min-w-0">
         {/* We can add caption input here later if needed */}
         <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
-          {image.file?.name || 'Image'}
+          {image.caption || 'Image'}
         </p>
       </div>
 
